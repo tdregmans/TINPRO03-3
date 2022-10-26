@@ -1,64 +1,63 @@
-// Technische Informatica
-
-// Programmeren 3 - TINPRO03-3 
-// Inleveropdracht: het containerschip
+// Programmeren 3
+// TINPRO03-1
 // Student: Thijs Dregmans (1024272)
-// Deadline: 10-04-2022
+// gelegenheid 2 (07-07-2022)
 
-import java.util.Random;
-
-public class Vrachtwagen extends Thread{
+public class Vrachtwagen extends Thread {
     private String naam;
-    private Container container;
+    private Kade kade;
+    private Kraan kraan1;
+    private Kraan kraan2;
+    
+    private Container gepaktContainer;
 
-    public Vrachtwagen(String naam) {
+    // Constructor
+    public Vrachtwagen(String naam, Kade kade, Kraan kraan1, Kraan kraan2) {
         this.naam = naam;
-        this.container = null;
+        this.kade = kade;
+        this.kraan1 = kraan1;
+        this.kraan2 = kraan2;
+        this.gepaktContainer = null;
     }
 
+    @Override
     public void run() {
-        while (true) {
-            if(Kade.isLeeg() && ContainerSchip.isLeeg()) {
-                
-                break;
-            }
-
-            // haal container op
+        while((kraan1.isAlive() == false && kraan2.isAlive() == false && kade.isLeeg() && gepaktContainer == null) == false) {
             try {
-                haalContainerOp();
+                // probeer een container te laden
+                containerLaden();
+                if(gepaktContainer != null) {
+                    Thread.sleep((int) (Math.random() * 500));
+                    containerLossen();
+                }
             }
-            catch(NullPointerException e1) {}
-
-            // verwerkings tijd zit tussen 1000 en 6000 ms
-            Random rand = new Random();
-            int sleepTime = rand.nextInt(3000) + 1000;
-            try {
-                sleep(sleepTime);
-            } catch (InterruptedException e1) {}
-
-            // weer beschikbaar
+            catch(InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+        System.out.println(naam + " Thread is gestopt!");
+        if(kade.isLeeg()) {
+            System.out.println("Kade is leeg!");
+        }
+        else {
+            System.out.println("Kade is nog niet leeg!");
         }
     }
 
-
-public synchronized void haalContainerOp() {
-        for(int x = 0; x < 5; x++) {
-            if(Kade.containers[x] != null) {
-                this.container = Kade.containers[x].get();
-                Kade.containers[x] = null;
-                if(this.container instanceof GekoeldeContainer) {
-                    System.out.println("Gekoelde container " + this.container.getVolgNummer() + " gekoppeld aan de vrachtwagen.");
-                }
-                else if(this.container instanceof VerwarmdeContainer) {
-                    System.out.println("Verwarmde container " + this.container.getVolgNummer() + " gekoppeld aan de vrachtwagen.");
-                }
-                System.out.println(this.naam + " heeft de container " + this.container.getVolgNummer() + " opgehaald.");
-                
-                System.out.println("Er staan nu " + (5-Kade.aantalLegePlaatsen()) + " container(s) op de Kade.");
-                break;
-            }
-        }
-        throw new NullPointerException();
+    public void containerLossen() throws InterruptedException {
+        System.out.println(naam + " heeft container: " + gepaktContainer.getContainerId() + " weggebracht.");
+        gepaktContainer = null;
     }
 
+    public void containerLaden() throws InterruptedException {
+        if(gepaktContainer == null) {
+            // pak een container van de kade
+            gepaktContainer = kade.containerVanKadePakken();
+            if(gepaktContainer != null) {
+                gepaktContainer.containerLaden();
+                System.out.println(naam + " heeft container " + gepaktContainer.getContainerId() + " opgepakt.");
+            }
+            
+        }
+    }
 }
